@@ -13,6 +13,9 @@ except ImportError:
     print("\n\nRequires pypandoc and pytidylib. See requirements.txt\n\n")
 
 
+VERSION = '0.1'
+
+
 def convert_to_html(filename):
     # Do the conversion with pandoc
     output = pypandoc.convert(filename, 'html')
