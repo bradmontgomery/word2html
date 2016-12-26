@@ -23,7 +23,7 @@ setup(
     license='MIT',
     packages=['word2html'],
     include_package_data=True,
-    package_data={'': ['README.rst', 'LICENSE.txt']},
+    package_data={'': ['README.md', 'LICENSE.txt']},
     zip_safe=False,
     install_requires=[
         'pypandoc',
