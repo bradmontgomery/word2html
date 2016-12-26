@@ -2,11 +2,15 @@ Convert a Word Doc to html
 ==========================
 
 
-Run the thing:
+To install, run:
 
-    python convert.py MyGloriousDoc.docx
+    pip install word2html
 
-This will give you a new file, `MyGloriousDoc.html`, that's (hopefully)
+This will give you a command-line script, which you can run:
+
+    $ word2html /path/to/MyGloriousDoc.docx
+
+This will give you a new file, `/path/to/MyGloriousDoc.html`, that's (hopefully)
 decent-looking html.
 
 
