@@ -32,7 +32,10 @@ def convert_to_html(filename):
     filename, ext = os.path.splitext(filename)
     filename = "{0}.html".format(filename)
     with open(filename, 'w') as f:
-        f.write(output.encode("UTF-8"))
+        # Python 2 "fix". If this isn't a string, encode it.
+        if type(output) is not str:
+            output = output.encode('utf-8')
+        f.write(output)
 
     print("Done! Output written to: {}\n".format(filename))
 
