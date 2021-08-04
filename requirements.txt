@@ -1,2 +1,2 @@
-pypandoc==1.3.3
+pypandoc==1.6.3
 pytidylib==0.3.2

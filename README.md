@@ -1,6 +1,4 @@
-Convert a Word Doc to html
-==========================
-
+# Convert a Word Doc to html
 
 To install, run:
 
@@ -13,9 +11,12 @@ This will give you a command-line script, which you can run:
 This will give you a new file, `/path/to/MyGloriousDoc.html`, that's (hopefully)
 decent-looking html.
 
+## Note on tests & versions
 
-Notes
------
+- This project has NO TESTS! (feel free to add some of you think it should).
+- This was last used with python 3.9 and the dependency versions listed in [requirements.txt](https://github.com/bradmontgomery/word2html/blob/master/requirements.txt)
+
+## Note on Licenses
 
 While this code is MIT-licensed, it uses boty pypandoc and pytidylib, both of
 which depend on other software that may not be MIT-licensed and must be installed
