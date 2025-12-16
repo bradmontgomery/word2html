@@ -1,6 +1,6 @@
-# Convert a Word Doc to html
+# 🌟 Convert a Word Doc to html
 
-## Quick Start with uvx
+## 🚀 Quick Start with uvx
 
 The easiest way to run word2html without installing is using `uvx`:
 
@@ -9,7 +9,7 @@ The easiest way to run word2html without installing is using `uvx`:
 This will give you a new file, `/path/to/MyGloriousDoc.html`, that's (hopefully)
 decent-looking html.
 
-## Installation
+## 💾 Installation
 
 To install with uv:
 
@@ -23,12 +23,12 @@ Then run:
 
     word2html /path/to/MyGloriousDoc.docx
 
-## Note on tests & versions
+## 🧪 Note on tests & versions
 
 - This project has NO TESTS! (feel free to add some of you think it should).
 - This project requires Python 3.12 or greater
 
-## Note on Licenses
+## 📝 Note on Licenses
 
 While this code is MIT-licensed, it uses boty pypandoc and pytidylib, both of
 which depend on other software that may not be MIT-licensed and must be installed
@@ -40,7 +40,10 @@ for this to work.
 * [pypandoc](https://pypi.python.org/pypi/pypandoc/) is available under the MIT
   license, while [Pandoc](http://pandoc.org/) is released under the GPL.
 
-## Star History
+## ⭐ Star History
+
+This project _really_ started out as a joke -- although this is something I've done too many times. I'm always
+amazed at how many people have starred this repo. 🤩
 
 <a href="https://www.star-history.com/#bradmontgomery/word2html&type=date&legend=top-left">
  <picture>
