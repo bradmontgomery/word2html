@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "word2html"
+version = "0.3.0"
+description = "A quick and dirty script to convert a Word (docx) document to html."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+keywords = ["word", "to", "html"]
+authors = [
+    { name = "Brad Montgomery", email = "brad@bradmontgomery.net" }
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Topic :: Text Processing",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "pypandoc>=1.16.2",
+    "pytidylib>=0.3.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/bradmontgomery/word2html"
+
+[project.scripts]
+word2html = "word2html.main:main"
+
+[tool.uv]
+dev-dependencies = []

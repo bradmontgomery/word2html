@@ -1,20 +1,32 @@
 # Convert a Word Doc to html
 
-To install, run:
+## Quick Start with uvx
 
-    pip install word2html
+The easiest way to run word2html without installing is using `uvx`:
 
-This will give you a command-line script, which you can run:
-
-    $ word2html /path/to/MyGloriousDoc.docx
+    uvx word2html /path/to/MyGloriousDoc.docx
 
 This will give you a new file, `/path/to/MyGloriousDoc.html`, that's (hopefully)
 decent-looking html.
 
+## Installation
+
+To install with uv:
+
+    uv tool install word2html
+
+Or with pip:
+
+    pip install word2html
+
+Then run:
+
+    word2html /path/to/MyGloriousDoc.docx
+
 ## Note on tests & versions
 
 - This project has NO TESTS! (feel free to add some of you think it should).
-- This was last used with python 3.9 and the dependency versions listed in [requirements.txt](https://github.com/bradmontgomery/word2html/blob/master/requirements.txt)
+- This project requires Python 3.12 or greater
 
 ## Note on Licenses
 
