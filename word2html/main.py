@@ -1,25 +1,42 @@
-"""
-Quick & dirt script to convert a Word Docx file to HTML.
+"""Quick & dirty script to convert a Word Docx file to HTML."""
 
-Requires pypandoc pytidylib  (see requirements.txt)
-
-"""
 import argparse
 import os
 import sys
+from pathlib import Path
 
 try:
     import pypandoc
     from tidylib import tidy_document
-except ImportError:
-    print("\n\nRequires pypandoc and pytidylib. See requirements.txt\n\n")
+except ImportError as e:
+    print(f"\n\nError: Missing required dependency: {e.name}\n", file=sys.stderr)
+    print("Install dependencies with: uv pip install pypandoc pytidylib\n", file=sys.stderr)
+    sys.exit(1)
 
 
-def convert_to_html(filename):
+def convert_to_html(filename: str) -> None:
+    """Convert a Word document to HTML.
+    
+    Args:
+        filename: Path to the Word document to convert.
+        
+    Raises:
+        FileNotFoundError: If the input file doesn't exist.
+        ValueError: If the input file is not a .docx file.
+    """
+    input_path = Path(filename)
+    
+    # Validate input file
+    if not input_path.exists():
+        raise FileNotFoundError(f"File not found: {filename}")
+    
+    if input_path.suffix.lower() != ".docx":
+        raise ValueError(f"Expected .docx file, got: {input_path.suffix}")
+    
     # Do the conversion with pandoc
-    output = pypandoc.convert(filename, "html")
+    output = pypandoc.convert_file(str(input_path), "html")
 
-    # Clean up with tidy...
+    # Clean up with tidy
     output, errors = tidy_document(
         output,
         options={
@@ -27,28 +44,38 @@ def convert_to_html(filename):
             "wrap": 80,
         },
     )
-    print(errors)
+    
+    if errors:
+        print(f"Tidy warnings/errors:\n{errors}", file=sys.stderr)
 
-    # replace smart quotes.
-    output = output.replace(u"\u2018", "&lsquo;").replace(u"\u2019", "&rsquo;")
-    output = output.replace(u"\u201c", "&ldquo;").replace(u"\u201d", "&rdquo;")
+    # Replace smart quotes with HTML entities
+    output = output.replace("\u2018", "&lsquo;").replace("\u2019", "&rsquo;")
+    output = output.replace("\u201c", "&ldquo;").replace("\u201d", "&rdquo;")
 
-    # write the output
-    filename, ext = os.path.splitext(filename)
-    filename = "{0}.html".format(filename)
-    with open(filename, "w") as f:
-        # Python 2 "fix". If this isn't a string, encode it.
-        if type(output) is not str:
-            output = output.encode("utf-8")
-        f.write(output)
+    # Write the output
+    output_path = input_path.with_suffix(".html")
+    output_path.write_text(output, encoding="utf-8")
 
-    print("Done! Output written to: {}\n".format(filename))
+    print(f"Done! Output written to: {output_path}")
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Main entry point for the command-line interface."""
     parser = argparse.ArgumentParser(
         description="Convert a Word document to an HTML document."
     )
-    parser.add_argument("path", type=str, help="Path to your word document")
+    parser.add_argument("path", type=str, help="Path to your Word document (.docx)")
     args = parser.parse_args()
-    convert_to_html(args.path)
+    
+    try:
+        convert_to_html(args.path)
+    except (FileNotFoundError, ValueError) as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

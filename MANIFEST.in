@@ -1,2 +1,0 @@
-include LICENSE.txt README.md
-recursive-include word2html *.py
