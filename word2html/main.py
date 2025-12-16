@@ -1,4 +1,8 @@
-"""Quick & dirty script to convert a Word Docx file to HTML."""
+"""Quick & dirty script to convert a Word Docx file to HTML.
+
+Copyright (c) 2025, Brad Montgomery <brad@bradmontgomery.net>
+Licensed under the MIT License. See LICENSE.txt for details.
+"""
 
 import argparse
 import os
