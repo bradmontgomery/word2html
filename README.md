@@ -28,3 +28,12 @@ for this to work.
 * [pypandoc](https://pypi.python.org/pypi/pypandoc/) is available under the MIT
   license, while [Pandoc](http://pandoc.org/) is released under the GPL.
 
+## Star History
+
+<a href="https://www.star-history.com/#bradmontgomery/word2html&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=bradmontgomery/word2html&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=bradmontgomery/word2html&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=bradmontgomery/word2html&type=date&legend=top-left" />
+ </picture>
+</a>
