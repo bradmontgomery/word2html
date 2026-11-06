@@ -14,7 +14,8 @@ from pathlib import Path
 from .common import Finding, FindingKind, Limits, sanitize
 from .errors import InvalidDocumentError, PandocError, PandocNotFoundError, ResourceLimitError
 
-MIN_PANDOC_VERSION = (3, 1, 3)
+# 3.1.11.1 dropped a third-party html5shiv <script> from the default HTML template.
+MIN_PANDOC_VERSION = (3, 1, 11, 1)
 
 _INSTALL_HINT = (
     "pandoc is required but was not found on your PATH. "
@@ -22,6 +23,12 @@ _INSTALL_HINT = (
 )
 _VERSION_PATTERN = re.compile(r"^pandoc(?:\.exe)?\s+(\d+(?:\.\d+)*)", re.MULTILINE)
 _VERSION_TIMEOUT_SECONDS = 30.0
+# Printed on every conversion by pandoc before 3.6.4, though the title just defaults to the
+# filename. The message's continuation lines are indented.
+_MISSING_TITLE_WARNING = re.compile(
+    r"^\[WARNING\] This document format requires a nonempty <title> element\.\n(?:[ \t]+.*\n?)*",
+    re.MULTILINE,
+)
 
 # GHC runtime exit code for heap exhaustion, seen when pandoc hits its -M limit.
 _EXIT_HEAP_EXHAUSTED = 251
@@ -130,7 +137,7 @@ def run_pandoc(
 
     warnings = [
         Finding(FindingKind.PANDOC, f"pandoc: {sanitize(line)}")
-        for line in stderr.splitlines()
+        for line in _MISSING_TITLE_WARNING.sub("", stderr).splitlines()
         if line.strip()
     ]
     return result.stdout, warnings

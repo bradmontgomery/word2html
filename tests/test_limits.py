@@ -123,9 +123,10 @@ def test_preflight_part_limit_uses_uncompressed_size(make_docx):
 def test_real_pandoc_heap_cap_is_a_clean_error(tmp_path):
     """Calls pandoc directly because preflight would otherwise catch this first."""
     path = tmp_path / "doc.docx"
-    path.write_bytes(docx_bytes(nested_tables(5000)))
+    unit = para(run("x" * 100))
+    path.write_bytes(docx_bytes(unit * (20 * MIB // len(unit))))
     with pytest.raises(ResourceLimitError, match="memory limit"):
-        run_pandoc(path, replace(Limits(), max_memory=64 * MIB))
+        run_pandoc(path, replace(Limits(), max_memory=16 * MIB))
 
 
 def test_memory_limit_is_passed_to_pandoc(make_docx, stub_pandoc, tmp_path):

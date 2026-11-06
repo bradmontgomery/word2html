@@ -14,6 +14,7 @@ import word2html
 from word2html import PandocError, PandocNotFoundError, ResourceLimitError, convert_to_html
 from word2html.common import format_size, sanitize
 from word2html.main import _parse_memory, _parse_size, _parse_timeout, main
+from word2html.pandoc import MIN_PANDOC_VERSION
 
 VERSION_OK = 'if [ "$1" = "--version" ]; then echo "pandoc 3.13"; exit 0; fi\n'
 
@@ -154,15 +155,15 @@ def test_pandoc_missing(make_docx, monkeypatch, tmp_path, capsys):
     assert "pandoc is required" in capsys.readouterr().err
 
 
-@pytest.mark.parametrize("version", ["pandoc 2.19.2", "pandoc 3.1.2", "pandoc 3"])
+@pytest.mark.parametrize("version", ["pandoc 2.19.2", "pandoc 3.1.3", "pandoc 3.1.11", "pandoc 3"])
 def test_pandoc_too_old(make_docx, stub_pandoc, version):
     stub_pandoc(f'echo "{version}"')
-    with pytest.raises(PandocError, match=r"3\.1\.3 or newer"):
+    with pytest.raises(PandocError, match=r"3\.1\.11\.1 or newer"):
         convert_to_html(make_docx(body=para(run("x"))))
 
 
 @pytest.mark.parametrize(
-    "version", ["pandoc 3.1.3", "pandoc 3.1.12.1", "pandoc 10.0", "pandoc.exe 3.13"]
+    "version", ["pandoc 3.1.11.1", "pandoc 3.1.12", "pandoc 10.0", "pandoc.exe 3.13"]
 )
 def test_pandoc_new_enough(make_docx, stub_pandoc, version):
     stub_pandoc(f'if [ "$1" = "--version" ]; then echo "{version}"; exit 0; fi\necho "<p>ok</p>"')
@@ -211,6 +212,25 @@ def test_pandoc_warnings_pass_through_as_notes(make_docx, stub_pandoc, capsys):
     assert "word2html: note: pandoc: [WARNING] something" in capsys.readouterr().err
 
 
+def test_missing_title_warning_is_filtered_but_other_warnings_are_kept(
+    make_docx, stub_pandoc, capsys
+):
+    stub_pandoc(
+        VERSION_OK
+        + "cat >&2 <<'MSG'\n"
+        + "[WARNING] This document format requires a nonempty <title> element.\n"
+        + "  Defaulting to 'doc' as the title.\n"
+        + "  To specify a title, use 'title' in metadata or --metadata title=\"...\".\n"
+        + "[WARNING] Something else\n"
+        + "MSG\n"
+        + 'echo "<p>ok</p>"'
+    )
+    assert main([str(make_docx(body=para(run("x"))))]) == 0
+    err = capsys.readouterr().err
+    assert "title" not in err
+    assert "[WARNING] Something else" in err
+
+
 def test_pandoc_cannot_run(make_docx, stub_pandoc, tmp_path):
     stub_pandoc(VERSION_OK)
     stub = tmp_path / "stub-bin" / "pandoc"
@@ -228,7 +248,7 @@ def test_readme_documents_what_the_cli_does():
         "--max-memory",
         "--max-file-size",
         "brew install pandoc",
-        "3.1.3",
+        ".".join(str(part) for part in MIN_PANDOC_VERSION),
     ):
         assert required in readme
     assert "NO TESTS" not in readme
