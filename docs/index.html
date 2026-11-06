@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>word2html: Word to HTML with safety checks</title>
+  <meta name="description" content="Convert Word .docx files to clean, self-contained HTML, with checks for malformed documents, unsafe links and hidden text.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<div class="layout">
+  <nav class="sidebar" aria-label="Documentation">
+    <a class="brand" href="index.html">word2html</a>
+    <span class="brand-version">Version 0.5.0</span>
+    <ul>
+      <li><a href="index.html" aria-current="page">Overview</a></li>
+      <li><a href="install.html">Installation</a></li>
+      <li><a href="usage.html">Command line</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="limits.html">Validation &amp; limits</a></li>
+      <li><a href="python-api.html">Python API</a></li>
+      <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      <li><a href="upgrading.html">Upgrading from 0.4</a></li>
+      <li><a href="development.html">Development</a></li>
+    </ul>
+    <ul class="external">
+      <li><a href="https://github.com/bradmontgomery/word2html">GitHub</a></li>
+      <li><a href="https://pypi.org/project/word2html/">PyPI</a></li>
+    </ul>
+  </nav>
+  <main id="content">
+<h1>word2html</h1>
+<p class="lede">Convert a Word <code>.docx</code> file into one self-contained HTML5 file, with checks for malformed documents, unsafe links, and hidden text.</p>
+
+<pre><code>$ word2html report.docx
+Done! Output written to: report.html</code></pre>
+
+<p>word2html runs <a href="https://pandoc.org/">pandoc</a> to do the conversion. On top of that it checks the document before pandoc sees it, inspects the HTML that comes out, and only then writes the file.</p>
+
+<h2 id="start">Get started</h2>
+<ol>
+  <li><a href="install.html#pandoc">Install pandoc</a> 3.6 or newer. It's a separate program that word2html doesn't install for you.</li>
+  <li>Run word2html on a document:
+<pre><code>uvx word2html report.docx</code></pre></li>
+  <li>Open <code>report.html</code>, next to the original file.</li>
+</ol>
+
+<h2 id="what-you-get">What you get</h2>
+<ul>
+  <li><strong>One file to share.</strong> Images are embedded in the HTML, so there's no folder of media to keep alongside it.</li>
+  <li><strong>Modern HTML.</strong> HTML5 with a declared UTF-8 charset, a page title, and pandoc's default styling. Tables, footnotes, and highlights are kept.</li>
+  <li><strong>Protection from bad input.</strong> Corrupt, oversized, and hostile files fail quickly with a clear error, and memory and time limits apply to pandoc itself.</li>
+  <li><strong>Safe file handling.</strong> Output is written atomically, so a failed run never damages an existing file.</li>
+  <li><strong>No Python dependencies.</strong> The only requirement besides Python is pandoc.</li>
+</ul>
+
+<h2 id="safety">What happens to risky content</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Found in the document</th><th>By default</th><th>With <code>--strict</code></th></tr></thead>
+  <tbody>
+    <tr><td>Unsafe links, such as <code>javascript:</code></td><td><span class="tag-warn">Warns</span>, then converts</td><td><span class="tag-refuse">Refuses</span></td></tr>
+    <tr><td>Text hidden in Word</td><td><span class="tag-warn">Warns</span>, then converts</td><td><span class="tag-refuse">Refuses</span></td></tr>
+    <tr><td>Active content, such as an "image" that's really HTML</td><td><span class="tag-refuse">Refuses</span></td><td><span class="tag-refuse">Refuses</span></td></tr>
+  </tbody>
+</table></div>
+<div class="warning"><p><strong>By default, flagged links and hidden text still end up in the HTML.</strong> The warning is the only protection, so use <code>--strict</code> anywhere nobody reads stderr. <a href="security.html">Read the security guide</a> before publishing HTML made from documents you didn't write.</p></div>
+
+<h2 id="next">Where to go next</h2>
+<div class="table-wrap"><table>
+  <tbody>
+    <tr><td><a href="install.html">Installation</a></td><td>Install pandoc and word2html on your platform.</td></tr>
+    <tr><td><a href="usage.html">Command line</a></td><td>Every option, exit code, and common recipe.</td></tr>
+    <tr><td><a href="security.html">Security</a></td><td>What's checked, what isn't, and how to handle untrusted documents.</td></tr>
+    <tr><td><a href="limits.html">Validation &amp; limits</a></td><td>What gets rejected, and how to tune memory and time limits.</td></tr>
+    <tr><td><a href="python-api.html">Python API</a></td><td>Use word2html from your own code.</td></tr>
+    <tr><td><a href="troubleshooting.html">Troubleshooting</a></td><td>What each error means and how to fix it.</td></tr>
+    <tr><td><a href="upgrading.html">Upgrading from 0.4</a></td><td>What changed, and what you may need to update.</td></tr>
+    <tr><td><a href="development.html">Development</a></td><td>Run the tests, understand the code, and contribute.</td></tr>
+  </tbody>
+</table></div>
+    <nav class="pager" aria-label="Next and previous pages">
+      <span></span>
+      <a href="install.html" rel="next">Installation →</a>
+    </nav>
+    <footer>word2html 0.5.0 · MIT License · <a href="https://github.com/bradmontgomery/word2html/issues">Report a problem</a></footer>
+  </main>
+</div>
+</body>
+</html>

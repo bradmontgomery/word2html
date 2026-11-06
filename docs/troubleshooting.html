@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Troubleshooting | word2html</title>
+  <meta name="description" content="What word2html error messages mean and how to fix them.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<div class="layout">
+  <nav class="sidebar" aria-label="Documentation">
+    <a class="brand" href="index.html">word2html</a>
+    <span class="brand-version">Version 0.5.0</span>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="install.html">Installation</a></li>
+      <li><a href="usage.html">Command line</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="limits.html">Validation &amp; limits</a></li>
+      <li><a href="python-api.html">Python API</a></li>
+      <li><a href="troubleshooting.html" aria-current="page">Troubleshooting</a></li>
+      <li><a href="upgrading.html">Upgrading from 0.4</a></li>
+      <li><a href="development.html">Development</a></li>
+    </ul>
+    <ul class="external">
+      <li><a href="https://github.com/bradmontgomery/word2html">GitHub</a></li>
+      <li><a href="https://pypi.org/project/word2html/">PyPI</a></li>
+    </ul>
+  </nav>
+  <main id="content">
+<h1>Troubleshooting</h1>
+<p class="lede">Find the message you're seeing, what it means, and how to fix it.</p>
+
+<h2 id="setup">Setup errors</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Message</th><th>Cause</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td><code>pandoc is required but was not found on your PATH</code></td><td>pandoc isn't installed, or your shell can't find it.</td><td><a href="install.html#pandoc">Install pandoc</a>, then open a new terminal.</td></tr>
+    <tr><td><code>pandoc 3.6 or newer is required</code></td><td>Your pandoc is too old, which is common with Linux packages.</td><td><a href="install.html#linux-versions">Install a newer version</a>.</td></tr>
+    <tr><td><code>this pandoc build does not allow memory limits</code></td><td>Your pandoc build turned off the option word2html uses to limit memory.</td><td>Use an <a href="https://pandoc.org/installing.html">official build</a>.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="input">Input errors (exit 1)</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Message</th><th>Cause</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td><code>File not found: …</code></td><td>The path is wrong.</td><td>Check the spelling and your current folder.</td></tr>
+    <tr><td><code>Expected a .docx file, got: …</code></td><td>The file doesn't end in <code>.docx</code>.</td><td>Save it as <code>.docx</code> in Word. Just renaming a <code>.doc</code> won't work.</td></tr>
+    <tr><td><code>Not a regular file: …</code></td><td>The path is a folder or something else that isn't a file.</td><td>Point it at the document itself.</td></tr>
+    <tr><td><code>File is empty: …</code></td><td>The file has no content, often from a failed download or sync.</td><td>Get a fresh copy.</td></tr>
+    <tr><td><code>This is a password-protected or legacy .doc file, not a .docx</code></td><td>The document is encrypted, or it's an old-format file named <code>.docx</code>.</td><td>Remove the password, or re-save it as <code>.docx</code> in Word.</td></tr>
+    <tr><td><code>Not a valid .docx file (it is not a readable zip archive)</code></td><td>The file is corrupt, incomplete, or not really a Word document.</td><td>Open it in Word and save a new copy.</td></tr>
+    <tr><td><code>not a Word document: …</code></td><td>It's a zip file, but required parts are missing.</td><td>Open it in Word and save a new copy, if it opens.</td></tr>
+    <tr><td><code>… is not well-formed XML</code></td><td>Part of the document is damaged, or was written by a faulty tool.</td><td>Open it in Word and save a new copy.</td></tr>
+    <tr><td><code>… contains a DOCTYPE, which Word documents never use</code></td><td>The document was crafted or written by unusual software.</td><td>Don't trust it. Re-save it in Word if you know where it came from.</td></tr>
+    <tr><td><code>archive member has an unsafe path</code>, <code>archive member is encrypted</code>, <code>archive has more than one member named …</code></td><td>The archive's structure is unusual, and is likely crafted or damaged.</td><td>Don't trust it. Re-save it in Word if you know where it came from.</td></tr>
+    <tr><td><code>pandoc could not read this document</code></td><td>The file passed the checks, but pandoc couldn't process it.</td><td>Open it in Word and save a new copy.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="limits">Limit errors (exit 1)</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Message</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td><code>File is … over the … limit</code></td><td>Use <code>--max-file-size</code> if you trust the file.</td></tr>
+    <tr><td><code>pandoc exceeded its …-byte memory limit</code></td><td>Use <code>--max-memory</code> if you trust the file. See <a href="limits.html#memory">how much memory you need</a>.</td></tr>
+    <tr><td><code>pandoc did not finish within … seconds</code></td><td>Use <code>--timeout</code> if you trust the file.</td></tr>
+    <tr><td><code>… is nested more than 256 levels deep</code></td><td>This is very unusual in a real document. Don't trust it unless you know where it came from. From Python, you can raise <code>max_xml_depth</code>.</td></tr>
+    <tr><td><code>… is larger than the 64 MiB limit for one part</code>, <code>document expands to …</code>, <code>archive has … entries</code></td><td>The document is unusually large or crafted. From Python, you can <a href="python-api.html#limits">raise these limits</a>.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="refused">Refusals (exit 3)</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Message</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td><code>refused: unsafe link: …</code></td><td>Remove or correct the link in Word. Without <code>--strict</code>, it converts with a warning.</td></tr>
+    <tr><td><code>refused: … hidden in Word …</code></td><td><a href="security.html#hidden-fix">Remove the hidden text</a>. Without <code>--strict</code>, it converts with a warning and <strong>publishes the text</strong>.</td></tr>
+    <tr><td><code>refused: active content: …</code></td><td>There's no option to allow this. Don't trust the document unless you know where it came from. Re-saving a known document in Word may clear it.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="output">Output errors (exit 1)</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Message</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td><code>Output path is a directory: …</code></td><td>A folder has the name word2html wants to use. Rename the folder or the document.</td></tr>
+    <tr><td><code>Could not write …</code></td><td>Check that you have write permission for the folder and there's free disk space. word2html writes next to the input, so a read-only input folder won't work.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="questions">Common questions</h2>
+<dl>
+  <dt>An image is missing from the HTML</dt>
+  <dd>It's probably linked rather than embedded, which word2html warns about: <code>image(s) are not stored in the document</code>. In Word, insert the picture normally, without "Link to File".</dd>
+  <dt>The page doesn't look like my Word document</dt>
+  <dd>word2html keeps structure and content, not visual design. The output uses pandoc's default CSS, which you can override in your own stylesheet.</dd>
+  <dt>I got a hidden-text warning, but I can't see any hidden text</dt>
+  <dd>Turn on hidden text display in Word, using the ¶ button on the Home tab. If the warning seems wrong, please <a href="https://github.com/bradmontgomery/word2html/issues">open an issue</a>, without attaching anything confidential.</dd>
+  <dt>Why did my previous <code>.html</code> file disappear?</dt>
+  <dd>word2html replaces an existing output file on success. Keep hand-edited copies under a different name.</dd>
+  <dt>The output is much bigger than the <code>.docx</code></dt>
+  <dd>Images are embedded using base64, which adds about a third to their size, and they're stored in the HTML rather than compressed in a zip archive.</dd>
+</dl>
+    <nav class="pager" aria-label="Next and previous pages">
+      <a href="python-api.html" rel="prev">← Python API</a>
+      <a href="upgrading.html" rel="next">Upgrading from 0.4 →</a>
+    </nav>
+    <footer>word2html 0.5.0 · MIT License · <a href="https://github.com/bradmontgomery/word2html/issues">Report a problem</a></footer>
+  </main>
+</div>
+</body>
+</html>

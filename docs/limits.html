@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Validation and limits | word2html</title>
+  <meta name="description" content="What word2html rejects before conversion, its resource limits, and how to tune memory and time.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<div class="layout">
+  <nav class="sidebar" aria-label="Documentation">
+    <a class="brand" href="index.html">word2html</a>
+    <span class="brand-version">Version 0.5.0</span>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="install.html">Installation</a></li>
+      <li><a href="usage.html">Command line</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="limits.html" aria-current="page">Validation &amp; limits</a></li>
+      <li><a href="python-api.html">Python API</a></li>
+      <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      <li><a href="upgrading.html">Upgrading from 0.4</a></li>
+      <li><a href="development.html">Development</a></li>
+    </ul>
+    <ul class="external">
+      <li><a href="https://github.com/bradmontgomery/word2html">GitHub</a></li>
+      <li><a href="https://pypi.org/project/word2html/">PyPI</a></li>
+    </ul>
+  </nav>
+  <main id="content">
+<h1>Validation &amp; limits</h1>
+<p class="lede">Every document is checked before pandoc sees it, so bad files fail in milliseconds with a clear error.</p>
+
+<h2 id="rejected">What gets rejected</h2>
+<p>All of these exit with code 1 and leave any existing output untouched:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Problem</th><th>Why it's rejected</th></tr></thead>
+  <tbody>
+    <tr><td>Missing file, a directory, or the wrong extension</td><td>There's nothing to convert</td></tr>
+    <tr><td>Empty, truncated, or non-zip files</td><td>A <code>.docx</code> is a zip archive</td></tr>
+    <tr><td>Password-protected and legacy <code>.doc</code> files</td><td>These aren't <code>.docx</code> files, even if they're named that way</td></tr>
+    <tr><td>Encrypted archive members</td><td>They can't be checked</td></tr>
+    <tr><td>Member paths that are absolute or contain <code>..</code></td><td>A path traversal attempt</td></tr>
+    <tr><td>Duplicate member names</td><td>The checks and pandoc could read different copies</td></tr>
+    <tr><td>Missing required parts</td><td>It isn't a Word document</td></tr>
+    <tr><td>XML that isn't well-formed, in any part</td><td>pandoc can silently lose content from these. A bad relationships file makes it drop every link and still report success</td></tr>
+    <tr><td>Any XML with a <code>DOCTYPE</code></td><td>Word never writes one, and it enables entity attacks</td></tr>
+    <tr><td>A failed integrity check, or a size in the zip headers that's wrong</td><td>The file is corrupt or has been tampered with</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="limits">Limits</h2>
+<p>A very small <code>.docx</code> can expand enormously. In testing, a 3 KB document of nested tables exhausted a 4 GB memory limit in pandoc in 15 seconds. Now it's rejected almost instantly, before pandoc runs.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Limit</th><th>Default</th><th>Change with</th><th>Applies</th></tr></thead>
+  <tbody>
+    <tr><td>Input file size</td><td>200 MiB</td><td><code>--max-file-size</code></td><td>Before pandoc</td></tr>
+    <tr><td>Total uncompressed size</td><td>1 GiB</td><td>Python API</td><td>Before pandoc</td></tr>
+    <tr><td>Size of one XML part</td><td>64 MiB</td><td>Python API</td><td>Before pandoc</td></tr>
+    <tr><td>Files in the archive</td><td>10,000</td><td>Python API</td><td>Before pandoc</td></tr>
+    <tr><td>XML nesting depth</td><td>256 levels</td><td>Python API</td><td>Before pandoc</td></tr>
+    <tr><td>pandoc memory</td><td>2 GiB</td><td><code>--max-memory</code></td><td>During conversion</td></tr>
+    <tr><td>pandoc run time</td><td>120 seconds</td><td><code>--timeout</code></td><td>During conversion</td></tr>
+  </tbody>
+</table></div>
+<p>See <a href="python-api.html#limits">the <code>Limits</code> class</a> to change the ones without a command-line option.</p>
+
+<h2 id="memory">How much memory you need</h2>
+<p>Memory depends mostly on how much text the document has, and whether it contains any media. These figures are peak memory measured with pandoc 3.13 on macOS, so treat them as a guide:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Document</th><th>Peak memory</th></tr></thead>
+  <tbody>
+    <tr><td>10 MB of document XML, no media</td><td>About 320 MB</td></tr>
+    <tr><td>1 MB of document XML, with an image</td><td>About 240 MB</td></tr>
+    <tr><td>5 MB of document XML, with an image</td><td>About 1.1 GB</td></tr>
+    <tr><td>10 MB of document XML, with an image</td><td>About 2.1 GB</td></tr>
+    <tr><td>A 50 MB image and little text</td><td>About 600 MB</td></tr>
+  </tbody>
+</table></div>
+<p>So a document with media takes about 200 MB of memory per MB of XML, because pandoc re-reads the whole page to embed the media. Large images themselves cost little. With the default 2 GiB limit, a document with media can have just under 10 MB of XML. Without media, the 64 MiB part limit normally applies first.</p>
+<p>To see how much XML a document has, list its contents and look for <code>word/document.xml</code>:</p>
+<pre><code>unzip -l report.docx</code></pre>
+
+<h2 id="tuning">Choosing limits</h2>
+<dl>
+  <dt>Your own documents, and a long one fails</dt>
+  <dd>Raise the limit that the error names: <code>--max-memory 8G</code> or <code>--timeout 600</code>.</dd>
+  <dt>Other people's documents</dt>
+  <dd>Lower them to what your real documents need, such as <code>--max-memory 512M --timeout 30 --max-file-size 25M</code>. The memory limit is a cap, not a target: a hostile file can use all of it before being stopped.</dd>
+</dl>
+<div class="note"><p>word2html reads the whole HTML into memory to check it, in addition to pandoc's use. <code>--max-memory</code> only limits pandoc, so allow some headroom on small machines.</p></div>
+    <nav class="pager" aria-label="Next and previous pages">
+      <a href="security.html" rel="prev">← Security</a>
+      <a href="python-api.html" rel="next">Python API →</a>
+    </nav>
+    <footer>word2html 0.5.0 · MIT License · <a href="https://github.com/bradmontgomery/word2html/issues">Report a problem</a></footer>
+  </main>
+</div>
+</body>
+</html>

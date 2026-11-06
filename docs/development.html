@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Development | word2html</title>
+  <meta name="description" content="Set up word2html for development, run tests and lint, understand the code, and publish the docs.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<div class="layout">
+  <nav class="sidebar" aria-label="Documentation">
+    <a class="brand" href="index.html">word2html</a>
+    <span class="brand-version">Version 0.5.0</span>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="install.html">Installation</a></li>
+      <li><a href="usage.html">Command line</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="limits.html">Validation &amp; limits</a></li>
+      <li><a href="python-api.html">Python API</a></li>
+      <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      <li><a href="upgrading.html">Upgrading from 0.4</a></li>
+      <li><a href="development.html" aria-current="page">Development</a></li>
+    </ul>
+    <ul class="external">
+      <li><a href="https://github.com/bradmontgomery/word2html">GitHub</a></li>
+      <li><a href="https://pypi.org/project/word2html/">PyPI</a></li>
+    </ul>
+  </nav>
+  <main id="content">
+<h1>Development</h1>
+<p class="lede">How to set up the project, run the checks, and find your way around the code.</p>
+
+<h2 id="setup">Setup</h2>
+<p>You'll need <a href="https://docs.astral.sh/uv/">uv</a> and <a href="install.html#pandoc">pandoc</a>.</p>
+<pre><code>git clone https://github.com/bradmontgomery/word2html.git
+cd word2html
+uv sync</code></pre>
+
+<h2 id="commands">Commands</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>uv run pytest</code></td><td>Run the tests</td></tr>
+    <tr><td><code>uv run pytest --cov</code></td><td>Run the tests, and require at least 90% coverage</td></tr>
+    <tr><td><code>uv run ruff check</code></td><td>Lint</td></tr>
+    <tr><td><code>uv run ruff format</code></td><td>Format the code</td></tr>
+    <tr><td><code>uv run mypy</code></td><td>Check types in strict mode</td></tr>
+    <tr><td><code>uv build</code></td><td>Build the wheel and source distribution</td></tr>
+    <tr><td><code>uv run word2html file.docx</code></td><td>Run your working copy</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="how-it-works">How a conversion works</h2>
+<ol>
+  <li><strong>Preflight</strong> (<code>docx.py</code>). Validates the file and its archive, parses every XML part as a stream with limits, and looks for hidden text and images that'll be lost. It also notes whether the document has any media.</li>
+  <li><strong>Convert</strong> (<code>pandoc.py</code>). Finds pandoc, checks its version, and runs it with memory and time limits. <code>--embed-resources</code> is only used if there's media, because it needs about six times the memory.</li>
+  <li><strong>Scan</strong> (<code>html_scan.py</code>). Parses the final HTML to find unsafe links and active content.</li>
+  <li><strong>Decide</strong> (<code>main.py</code>). Refuses active content always, and refuses unsafe links and hidden text with <code>--strict</code>.</li>
+  <li><strong>Write</strong> (<code>main.py</code>). Atomically replaces the output file.</li>
+</ol>
+
+<h2 id="layout">Project layout</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Path</th><th>Contents</th></tr></thead>
+  <tbody>
+    <tr><td><code>word2html/main.py</code></td><td><code>convert_to_html()</code>, atomic writes, and the command line</td></tr>
+    <tr><td><code>word2html/docx.py</code></td><td>Preflight validation and hidden-text detection</td></tr>
+    <tr><td><code>word2html/pandoc.py</code></td><td>Finding and running pandoc, and the minimum version</td></tr>
+    <tr><td><code>word2html/html_scan.py</code></td><td>Unsafe link and active content scanning</td></tr>
+    <tr><td><code>word2html/common.py</code></td><td><code>Limits</code>, <code>Finding</code>, and terminal output sanitizing</td></tr>
+    <tr><td><code>word2html/errors.py</code></td><td>Exceptions</td></tr>
+    <tr><td><code>tests/</code></td><td>The test suite</td></tr>
+    <tr><td><code>docs/</code></td><td>This documentation, as static HTML</td></tr>
+    <tr><td><code>.github/</code></td><td>The CI workflow and Dependabot configuration</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="tests">Tests</h2>
+<p>Tests use real pandoc wherever behaviour depends on it, and <strong>the suite fails rather than skips if pandoc is missing</strong>. A small stub stands in for pandoc only to simulate states that are hard to produce for real, such as a hanging or too-old pandoc.</p>
+<p>Test documents are built in code by helpers in <code>tests/conftest.py</code>, so no binary files are committed:</p>
+<pre><code>def test_hidden_text_warns(make_docx):
+    path = make_docx(body=para(run("secret", "&lt;w:vanish/&gt;")))
+    result = convert_to_html(path)
+    assert result.warnings[0].kind is FindingKind.HIDDEN_TEXT</code></pre>
+<div class="table-wrap"><table>
+  <thead><tr><th>File</th><th>Covers</th></tr></thead>
+  <tbody>
+    <tr><td><code>test_convert.py</code></td><td>Normal conversions, and what's kept or dropped</td></tr>
+    <tr><td><code>test_paths.py</code></td><td>Unusual filenames, including the wrong-file regressions</td></tr>
+    <tr><td><code>test_links.py</code></td><td>Unsafe links and <code>--strict</code></td></tr>
+    <tr><td><code>test_active_content.py</code></td><td>Active content and allowed media</td></tr>
+    <tr><td><code>test_hidden_text.py</code></td><td>Hidden text detection</td></tr>
+    <tr><td><code>test_malformed.py</code></td><td>Corrupt and hostile documents</td></tr>
+    <tr><td><code>test_limits.py</code></td><td>Resource limits</td></tr>
+    <tr><td><code>test_output.py</code></td><td>Atomic writes, symlinks, and permissions</td></tr>
+    <tr><td><code>test_cli.py</code></td><td>Exit codes, options, and pandoc failures</td></tr>
+    <tr><td><code>test_docs.py</code></td><td>That these docs have no broken links and still match the code</td></tr>
+  </tbody>
+</table></div>
+<p>When you add a guard, make sure a test fails without it: temporarily disable the guard, and confirm the suite notices.</p>
+
+<h2 id="ci">Continuous integration</h2>
+<p>GitHub Actions runs on every pull request and push to <code>main</code>:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Job</th><th>What it checks</th></tr></thead>
+  <tbody>
+    <tr><td><code>lint</code></td><td>The lockfile, ruff, formatting, and mypy</td></tr>
+    <tr><td><code>test</code></td><td>The tests with coverage, on Linux and macOS, with Python 3.12 to 3.15 and pandoc 3.13</td></tr>
+    <tr><td><code>pandoc-minimum</code></td><td>The tests on the oldest supported pandoc</td></tr>
+    <tr><td><code>package</code></td><td>Installs the built wheel in a clean environment and converts a document</td></tr>
+  </tbody>
+</table></div>
+<p>Actions are pinned to full commit hashes, and Dependabot proposes weekly updates for actions and Python packages. The pandoc versions in <code>ci.yml</code> are updated by hand.</p>
+
+<h2 id="pandoc-version">Changing the minimum pandoc version</h2>
+<p>Update these together. <code>test_docs.py</code> catches a mismatch in the code and these docs:</p>
+<ul>
+  <li><code>MIN_PANDOC_VERSION</code> in <code>word2html/pandoc.py</code></li>
+  <li><code>PANDOC_MINIMUM</code> in <code>.github/workflows/ci.yml</code></li>
+  <li><code>README.md</code> and the pages in <code>docs/</code></li>
+</ul>
+
+<h2 id="docs">Working on these docs</h2>
+<p>The site is plain HTML with one stylesheet and no build step. To preview it:</p>
+<pre><code>python3 -m http.server --directory docs 8000</code></pre>
+<p>Then open <code>http://localhost:8000</code>. When you add a page, add it to the sidebar on every page. Keep links relative, because the site is served from <code>/word2html/</code>.</p>
+
+<h3 id="pages">Publishing with GitHub Pages</h3>
+<ol>
+  <li>Merge the docs to <code>main</code>.</li>
+  <li>In the repository, open <strong>Settings › Pages</strong>.</li>
+  <li>Under <strong>Build and deployment</strong>, set <strong>Source</strong> to <strong>Deploy from a branch</strong>.</li>
+  <li>Choose the <code>main</code> branch and the <code>/docs</code> folder, then save.</li>
+</ol>
+<p>The site is published to <a href="https://bradmontgomery.github.io/word2html/">bradmontgomery.github.io/word2html</a>. The empty <code>docs/.nojekyll</code> file tells GitHub to serve the files as they are.</p>
+
+<h2 id="release">Releasing</h2>
+<ol>
+  <li>Update <code>version</code> in <code>pyproject.toml</code>, then run <code>uv lock</code>.</li>
+  <li>Update the version in the docs. <code>test_docs.py</code> checks this.</li>
+  <li>Merge to <code>main</code>, after CI passes.</li>
+  <li>Run <code>uv build</code>, and then <code>uv publish</code>.</li>
+</ol>
+    <nav class="pager" aria-label="Next and previous pages">
+      <a href="upgrading.html" rel="prev">← Upgrading from 0.4</a>
+      <span></span>
+    </nav>
+    <footer>word2html 0.5.0 · MIT License · <a href="https://github.com/bradmontgomery/word2html/issues">Report a problem</a></footer>
+  </main>
+</div>
+</body>
+</html>
