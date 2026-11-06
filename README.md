@@ -8,7 +8,7 @@ documents, unsafe links, and hidden text.
 
 ## 📋 Requirements
 
-- **pandoc 3.1.11.1 or newer.** This is a separate program: `uvx` and `pip` do **not** install it.
+- **pandoc 3.2.1 or newer.** This is a separate program: `uvx` and `pip` do **not** install it.
 - Python 3.12 or newer.
 
 Install pandoc with one of these:
@@ -24,7 +24,7 @@ Then check the version, because Linux distribution packages can be older than wo
 
     pandoc --version
 
-For example, `apt` installs a new enough pandoc on Debian 13, but not on Ubuntu 24.04 or Debian 12.
+For example, `apt` doesn't install a new enough pandoc on Debian 12 or 13, or on Ubuntu 24.04.
 If yours is too old, use an installer from the
 [pandoc releases page](https://github.com/jgm/pandoc/releases). word2html is tested on Linux and
 macOS on Python 3.12 to 3.15; Windows is not tested.
@@ -161,7 +161,7 @@ If you hit the limit, the error tells you, and `--max-memory 8G` (for example) a
 ## ⬆️ Upgrading from 0.4
 
 - pypandoc, pytidylib, and libtidy are no longer used, and there are no Python dependencies. You
-  now need only pandoc 3.1.11.1 or newer.
+  now need only pandoc 3.2.1 or newer.
 - Output is now HTML5 with a declared charset and pandoc's default CSS, rather than tidied HTML 4.
   Highlights and footnote sections survive, and images are embedded rather than broken.
 - Exit code `3` is new, and warnings on stderr have a new format.

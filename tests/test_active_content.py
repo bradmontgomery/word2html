@@ -82,6 +82,7 @@ def test_malicious_svg_stays_inert_inside_img(make_docx):
         '<applet code="x"></applet>',
         '<frameset><frame src="x"></frameset>',
         '<base href="https://example.com/">',
+        '<svg><a><animate attributeName="href" values="javascript:alert(1)"/></a></svg>',
         '<meta http-equiv="Refresh" content="0;url=https://example.com">',
         '<img src="x" onerror="alert(1)">',
         '<p ONCLICK="alert(1)">x</p>',

@@ -17,7 +17,7 @@ env:
   UV_VERSION: "0.13.7"
   PANDOC_VERSION: "3.13"
   # Keep in sync with MIN_PANDOC_VERSION in word2html/pandoc.py.
-  PANDOC_MINIMUM: "3.1.11.1"
+  PANDOC_MINIMUM: "3.2.1"
 
 jobs:
   lint:

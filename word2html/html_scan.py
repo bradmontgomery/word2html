@@ -18,7 +18,11 @@ _ALLOWED_SCHEMES = frozenset({"http", "https", "mailto", "tel", "ftp"})
 _URL_ATTRS = frozenset(
     {"href", "src", "action", "formaction", "poster", "data", "background", "xlink:href"}
 )
-_ACTIVE_ELEMENTS = frozenset({"script", "iframe", "object", "applet", "frame", "frameset", "base"})
+# An inline <svg> can run code, unlike an SVG in <img>. Attributes aren't enough to judge it:
+# <animate> can set a link's href to javascript: without either appearing in an href.
+_ACTIVE_ELEMENTS = frozenset(
+    {"script", "iframe", "object", "applet", "frame", "frameset", "base", "svg"}
+)
 _MEDIA_ELEMENTS = frozenset({"video", "audio", "source", "track"})
 
 _SCHEME = re.compile(r"^([a-z][a-z0-9+.\-]*):", re.IGNORECASE)

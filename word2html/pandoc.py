@@ -14,8 +14,9 @@ from pathlib import Path
 from .common import Finding, FindingKind, Limits, sanitize
 from .errors import InvalidDocumentError, PandocError, PandocNotFoundError, ResourceLimitError
 
-# 3.1.11.1 dropped a third-party html5shiv <script> from the default HTML template.
-MIN_PANDOC_VERSION = (3, 1, 11, 1)
+# Before 3.2.1, --embed-resources inlined SVG images as live <svg> elements, which can
+# carry scripts. Since then they are inert <img> data URIs, like other images.
+MIN_PANDOC_VERSION = (3, 2, 1)
 
 _INSTALL_HINT = (
     "pandoc is required but was not found on your PATH. "
