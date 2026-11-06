@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.13.7"
+  PANDOC_VERSION: "3.13"
+  # Keep in sync with MIN_PANDOC_VERSION in word2html/pandoc.py.
+  PANDOC_MINIMUM: "3.1.3"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - run: uv lock --check
+      - run: uv run --locked ruff check
+      - run: uv run --locked ruff format --check
+      - run: uv run --locked mypy
+
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.12", "3.13", "3.14", "3.15"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - uses: pandoc/actions/setup@86321b6dd4675f5014c611e05088e10d4939e09e # v1.1.1
+        if: runner.os == 'Linux'
+        with:
+          version: ${{ env.PANDOC_VERSION }}
+      # The setup action installs an x86_64 build on macOS, but macos-latest is arm64.
+      - name: Install native pandoc on macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$PANDOC_VERSION" --repo jgm/pandoc \
+            --pattern '*-arm64-macOS.zip' --dir "$RUNNER_TEMP/pandoc"
+          unzip -q "$RUNNER_TEMP"/pandoc/*.zip -d "$RUNNER_TEMP/pandoc"
+          dirname "$(find "$RUNNER_TEMP/pandoc" -type f -name pandoc | head -n 1)" >> "$GITHUB_PATH"
+      - run: pandoc --version
+      - run: uv run --locked pytest --cov
+
+  pandoc-minimum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: "3.12"
+          enable-cache: true
+      - uses: pandoc/actions/setup@86321b6dd4675f5014c611e05088e10d4939e09e # v1.1.1
+        with:
+          version: ${{ env.PANDOC_MINIMUM }}
+      - run: pandoc --version
+      - run: uv run --locked pytest
+
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - uses: pandoc/actions/setup@86321b6dd4675f5014c611e05088e10d4939e09e # v1.1.1
+        with:
+          version: ${{ env.PANDOC_VERSION }}
+      - run: uv build
+      - name: Install the wheel into a clean environment and convert a document
+        shell: bash
+        run: |
+          uv venv "$RUNNER_TEMP/clean"
+          uv pip install --python "$RUNNER_TEMP/clean/bin/python" dist/*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/clean/bin/word2html" --version
+          printf '# Hello\n\nCaf\xc3\xa9\n' | pandoc --from=markdown --to=docx --output=sample.docx
+          "$RUNNER_TEMP/clean/bin/word2html" --strict sample.docx
+          grep -q 'Café' sample.html

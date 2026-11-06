@@ -1,20 +1,36 @@
 """word2html - Convert Word documents to HTML.
 
-Copyright (c) 2025, Brad Montgomery <brad@bradmontgomery.net>
+Copyright (c) 2025-2026, Brad Montgomery <brad@bradmontgomery.net>
 Licensed under the MIT License. See LICENSE.txt for details.
 """
 
-try:
-    from importlib.metadata import version, PackageNotFoundError
-    try:
-        __version__ = version("word2html")
-    except PackageNotFoundError:
-        __version__ = "0.0.0+dev"
-except ImportError:
-    __version__ = "0.0.0+dev"
+from .common import Finding, FindingKind, Limits, __version__
+from .errors import (
+    InvalidDocumentError,
+    OutputError,
+    PandocError,
+    PandocNotFoundError,
+    ResourceLimitError,
+    UnsafeDocumentError,
+    WordToHtmlError,
+)
+from .main import ConversionResult, convert_to_html
 
 VERSION = __version__
 
-from .main import convert_to_html
-
-__all__ = ["convert_to_html", "__version__", "VERSION"]
+__all__ = [
+    "VERSION",
+    "ConversionResult",
+    "Finding",
+    "FindingKind",
+    "InvalidDocumentError",
+    "Limits",
+    "OutputError",
+    "PandocError",
+    "PandocNotFoundError",
+    "ResourceLimitError",
+    "UnsafeDocumentError",
+    "WordToHtmlError",
+    "__version__",
+    "convert_to_html",
+]
