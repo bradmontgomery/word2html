@@ -8,7 +8,7 @@ documents, unsafe links, and hidden text.
 
 ## 📋 Requirements
 
-- **pandoc 3.2.1 or newer.** This is a separate program: `uvx` and `pip` do **not** install it.
+- **pandoc 3.6 or newer.** This is a separate program: `uvx` and `pip` do **not** install it.
 - Python 3.12 or newer.
 
 Install pandoc with one of these:
@@ -161,7 +161,7 @@ If you hit the limit, the error tells you, and `--max-memory 8G` (for example) a
 ## ⬆️ Upgrading from 0.4
 
 - pypandoc, pytidylib, and libtidy are no longer used, and there are no Python dependencies. You
-  now need only pandoc 3.2.1 or newer.
+  now need only pandoc 3.6 or newer.
 - Output is now HTML5 with a declared charset and pandoc's default CSS, rather than tidied HTML 4.
   Highlights and footnote sections survive, and images are embedded rather than broken.
 - Exit code `3` is new, and warnings on stderr have a new format.

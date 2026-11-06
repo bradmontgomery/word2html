@@ -14,9 +14,9 @@ from pathlib import Path
 from .common import Finding, FindingKind, Limits, sanitize
 from .errors import InvalidDocumentError, PandocError, PandocNotFoundError, ResourceLimitError
 
-# Before 3.2.1, --embed-resources inlined SVG images as live <svg> elements, which can
-# carry scripts. Since then they are inert <img> data URIs, like other images.
-MIN_PANDOC_VERSION = (3, 2, 1)
+# Before 3.6, --sandbox did not apply to --embed-resources, so an image URL such as
+# /etc/passwd could copy that file into the HTML.
+MIN_PANDOC_VERSION = (3, 6)
 
 _INSTALL_HINT = (
     "pandoc is required but was not found on your PATH. "

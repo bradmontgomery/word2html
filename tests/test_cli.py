@@ -156,16 +156,16 @@ def test_pandoc_missing(make_docx, monkeypatch, tmp_path, capsys):
 
 
 @pytest.mark.parametrize(
-    "version", ["pandoc 2.19.2", "pandoc 3.1.11.1", "pandoc 3.2", "pandoc 3.2.0.1", "pandoc 3"]
+    "version", ["pandoc 2.19.2", "pandoc 3.1.11.1", "pandoc 3.2.1", "pandoc 3.5", "pandoc 3"]
 )
 def test_pandoc_too_old(make_docx, stub_pandoc, version):
     stub_pandoc(f'echo "{version}"')
-    with pytest.raises(PandocError, match=r"3\.2\.1 or newer"):
+    with pytest.raises(PandocError, match=r"3\.6 or newer"):
         convert_to_html(make_docx(body=para(run("x"))))
 
 
 @pytest.mark.parametrize(
-    "version", ["pandoc 3.2.1", "pandoc 3.2.1.1", "pandoc 10.0", "pandoc.exe 3.13"]
+    "version", ["pandoc 3.6", "pandoc 3.6.1", "pandoc 10.0", "pandoc.exe 3.13"]
 )
 def test_pandoc_new_enough(make_docx, stub_pandoc, version):
     stub_pandoc(f'if [ "$1" = "--version" ]; then echo "{version}"; exit 0; fi\necho "<p>ok</p>"')

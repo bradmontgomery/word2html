@@ -87,7 +87,7 @@ def test_images_are_embedded_not_left_dangling(make_docx):
     result = convert_to_html(path)
     html = result.output_path.read_text(encoding="utf-8")
     assert "media/image1.png" not in html
-    encoded = re.search(r'<img src="data:image/png;base64,([^"]+)"', html)
+    encoded = re.search(r'<img\b[^>]*\bsrc="data:image/png;base64,([^"]+)"', html)
     assert encoded is not None
     assert base64.b64decode(encoded.group(1)) == PNG
     assert result.warnings == ()
@@ -187,6 +187,23 @@ def test_linked_images_are_never_fetched_or_read_from_disk(make_docx, tmp_path):
     assert "<img" not in body_of(raw)
     assert base64.b64encode(b"CANARY-SECRET").decode()[:8] not in raw
     assert any("3 image(s)" in finding.message for finding in result.warnings)
+
+
+def test_embedded_image_targets_cannot_read_local_files(make_docx, tmp_path):
+    """Before pandoc 3.6, --sandbox did not stop --embed-resources from reading local files."""
+    secret = tmp_path / "secret.png"
+    secret.write_bytes(b"CANARY-SECRET")
+    path = make_docx(
+        body=para(image('r:embed="a"')) + para(image('r:embed="b"')),
+        rels=relationship("a", "image", str(secret))
+        + relationship("b", "image", f"file://{secret}"),
+        files={"word/media/unused.png": PNG},
+    )
+    result = convert_to_html(path)
+    raw = result.output_path.read_text(encoding="utf-8")
+    assert base64.b64encode(b"CANARY-SECRET").decode() not in raw
+    assert "<img" not in body_of(raw)
+    assert [finding.kind for finding in result.warnings] == [FindingKind.LINKED_IMAGE]
 
 
 def test_embedded_image_with_a_missing_target_warns(make_docx):

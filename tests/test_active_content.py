@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from conftest import image, para, relationship
 
@@ -51,15 +53,17 @@ def test_cli_exits_three(make_docx, capsys):
 @pytest.mark.parametrize(
     ("media_name", "content", "expected"),
     [
-        ("media/e.pdf", b"%PDF-1.4 x", '<embed src="data:application/pdf'),
-        ("media/e.mp4", b"x", '<video src="data:video/mp4'),
-        ("media/e.svg", b"<svg xmlns='http://www.w3.org/2000/svg'/>", '<img src="data:image/svg'),
+        ("media/e.pdf", b"%PDF-1.4 x", ("embed", "data:application/pdf")),
+        ("media/e.mp4", b"x", ("video", "data:video/mp4")),
+        ("media/e.svg", b"<svg xmlns='http://www.w3.org/2000/svg'/>", ("img", "data:image/svg")),
     ],
 )
 def test_legitimate_media_is_allowed(make_docx, media_name, content, expected):
     path = media_doc(make_docx, media_name, content)
     result = convert_to_html(path, strict=True)
-    assert expected in result.output_path.read_text(encoding="utf-8")
+    element, source = expected
+    html = result.output_path.read_text(encoding="utf-8")
+    assert re.search(rf'<{element}\b[^>]*\bsrc="{source}', html)
     assert result.warnings == ()
 
 
@@ -68,7 +72,7 @@ def test_malicious_svg_stays_inert_inside_img(make_docx):
     result = convert_to_html(path, strict=True)
     html = result.output_path.read_text(encoding="utf-8")
     body = html[html.index("<body") :]
-    assert '<img src="data:image/svg+xml' in body
+    assert re.search(r'<img\b[^>]*\bsrc="data:image/svg\+xml', body)
     assert "<script" not in body
     assert "onload" not in body
 
