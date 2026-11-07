@@ -1,29 +1,32 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.33.0"]
 build-backend = "hatchling.build"
 
 [project]
 name = "word2html"
-version = "0.4.0"
-description = "A quick and dirty script to convert a Word (docx) document to html."
+version = "0.5.0"
+description = "Convert a Word (docx) document to HTML, safely, using pandoc."
 readme = "README.md"
 requires-python = ">=3.12"
-license = { text = "MIT" }
-keywords = ["word", "to", "html"]
+license = "MIT"
+license-files = ["LICENSE.txt"]
+keywords = ["word", "docx", "html", "pandoc"]
 authors = [
     { name = "Brad Montgomery", email = "brad@bradmontgomery.net" }
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "License :: OSI Approved :: MIT License",
     "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Text Processing",
     "Topic :: Utilities",
 ]
-dependencies = [
-    "pypandoc>=1.16.2",
-    "pytidylib>=0.3.2",
-]
+# No Python dependencies: the only requirement is the pandoc executable.
+dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/bradmontgomery/word2html"
@@ -31,5 +34,40 @@ Homepage = "https://github.com/bradmontgomery/word2html"
 [project.scripts]
 word2html = "word2html.main:main"
 
-[tool.uv]
-dev-dependencies = []
+[dependency-groups]
+dev = [
+    "mypy>=2.4.1",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.4",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["word2html"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# Curly quotes in test documents are deliberate.
+"tests/*" = ["RUF001"]
+
+[tool.mypy]
+strict = true
+files = ["word2html"]
+
+[tool.pytest]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+
+[tool.coverage.run]
+branch = true
+source = ["word2html"]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Security | word2html</title>
+  <meta name="description" content="How word2html handles unsafe links, hidden text and active content, what --strict does, and what isn't protected.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<div class="layout">
+  <nav class="sidebar" aria-label="Documentation">
+    <a class="brand" href="index.html">word2html</a>
+    <span class="brand-version">Version 0.5.0</span>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="install.html">Installation</a></li>
+      <li><a href="usage.html">Command line</a></li>
+      <li><a href="security.html" aria-current="page">Security</a></li>
+      <li><a href="limits.html">Validation &amp; limits</a></li>
+      <li><a href="python-api.html">Python API</a></li>
+      <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      <li><a href="upgrading.html">Upgrading from 0.4</a></li>
+      <li><a href="development.html">Development</a></li>
+    </ul>
+    <ul class="external">
+      <li><a href="https://github.com/bradmontgomery/word2html">GitHub</a></li>
+      <li><a href="https://pypi.org/project/word2html/">PyPI</a></li>
+    </ul>
+  </nav>
+  <main id="content">
+<h1>Security</h1>
+<p class="lede">Word documents can contain things you don't want to publish, or that could harm someone viewing the page. This page explains what word2html catches, and where its protection ends.</p>
+
+<h2 id="summary">Summary</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Found in the document</th><th>By default</th><th>With <code>--strict</code></th></tr></thead>
+  <tbody>
+    <tr><td><a href="#unsafe-links">Unsafe links</a></td><td><span class="tag-warn">Warns</span>, then converts</td><td><span class="tag-refuse">Refuses</span> (exit 3)</td></tr>
+    <tr><td><a href="#hidden-text">Hidden text</a></td><td><span class="tag-warn">Warns</span>, then converts</td><td><span class="tag-refuse">Refuses</span> (exit 3)</td></tr>
+    <tr><td><a href="#active-content">Active content</a></td><td><span class="tag-refuse">Refuses</span> (exit 3)</td><td><span class="tag-refuse">Refuses</span> (exit 3)</td></tr>
+    <tr><td><a href="limits.html">Malformed or hostile files</a></td><td><span class="tag-refuse">Rejects</span> (exit 1)</td><td><span class="tag-refuse">Rejects</span> (exit 1)</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="strict">Default mode and <code>--strict</code></h2>
+<p>By default, word2html prints a warning and still writes the file, <strong>including the flagged link or hidden text</strong>. That suits converting your own documents, where you'll read the warning and decide.</p>
+<p>With <code>--strict</code>, the same findings become a refusal: exit code 3 and no output. All the findings are reported together, so you can fix them in one pass.</p>
+<div class="warning"><p><strong>Use <code>--strict</code> in scripts, CI, and anywhere else nobody reads stderr.</strong> In default mode those runs exit 0 even when the HTML contains a <code>javascript:</code> link.</p></div>
+
+<h2 id="unsafe-links">Unsafe links</h2>
+<p>A link in a Word document can point anywhere, including at code that runs when someone clicks it. pandoc copies these into the HTML unchanged.</p>
+<pre><code>$ word2html links.docx
+Done! Output written to: links.html
+word2html: warning: unsafe link: javascript:alert(1)
+
+$ word2html --strict links.docx
+word2html: refused: unsafe link: javascript:alert(1)
+word2html: error: Refusing to convert because --strict is set and the document is not clean.</code></pre>
+<p>word2html uses an allowlist, so anything it doesn't recognize is flagged:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Allowed</th><th>Examples</th></tr></thead>
+  <tbody>
+    <tr><td>Schemes</td><td><code>http</code>, <code>https</code>, <code>mailto</code>, <code>tel</code>, <code>ftp</code></td></tr>
+    <tr><td>Relative links</td><td><code>other.html</code>, <code>../up.html</code>, <code>//example.com/x</code></td></tr>
+    <tr><td>Links within the page</td><td><code>#section</code></td></tr>
+  </tbody>
+</table></div>
+<p>Everything else is flagged, including <code>javascript:</code>, <code>vbscript:</code>, <code>data:</code>, <code>file:</code>, and <code>blob:</code>. URLs are normalized the way browsers do it before they're checked, so disguises such as <code>JaVaScRiPt:</code>, <code>java&lt;tab&gt;script:</code>, and a leading space are caught too. Word's <code>HYPERLINK</code> fields are checked as well as ordinary links.</p>
+<p>The check only looks at where a link points. An <code>https</code> link to a phishing site passes.</p>
+
+<h2 id="hidden-text">Hidden text</h2>
+<p>Word lets you format text as hidden, and pandoc ignores that formatting. <strong>Text the author thought was hidden appears as ordinary visible text in the HTML.</strong></p>
+<pre><code>$ word2html notes.docx
+Done! Output written to: notes.html
+word2html: warning: 1 run(s) of text hidden in Word will be visible in the HTML (word/document.xml)</code></pre>
+<p>The warning gives a count and location, and never repeats the text, so it can't leak into logs. A "run" is a stretch of text with the same formatting, so one sentence can count as several.</p>
+
+<h3 id="hidden-detection">What counts as hidden</h3>
+<ul>
+  <li>Text in the document body, footnotes, or endnotes, which are the parts pandoc publishes</li>
+  <li>Hidden through direct formatting, a character style, a paragraph style, a style it's based on, or the document defaults</li>
+</ul>
+<p>These don't count, because Word displays the text or there's nothing to leak:</p>
+<ul>
+  <li>Formatting explicitly turned off, such as direct formatting that overrides a hiding style</li>
+  <li>Text hidden by both a paragraph style and a character style, since these cancel out in Word</li>
+  <li>A hidden paragraph mark on otherwise visible text</li>
+  <li>Text hidden only in Web Layout view, which is common in tables of contents</li>
+  <li>Blank text</li>
+</ul>
+
+<h3 id="hidden-fix">Removing hidden text</h3>
+<p>Show hidden text in Word and delete what you don't want. Word for Windows can also find it for you: <strong>File › Info › Check for Issues › Inspect Document</strong>.</p>
+
+<h2 id="active-content">Active content</h2>
+<p>Active content is anything that could run in a browser without the reader clicking anything. A crafted document can produce it, for example by labelling an HTML file as an image. Word doesn't normally create this, so it's <strong>always refused</strong>, even without <code>--strict</code>.</p>
+<pre><code>$ word2html crafted.docx
+word2html: refused: active content: &lt;embed&gt; of data:text/html;charset=utf-8,%3Cscript%3Ealert%281%29%3C%2Fscript%3E
+word2html: error: The document contains active content, so it was not converted.</code></pre>
+<p>This covers <code>script</code>, <code>iframe</code>, <code>object</code>, <code>applet</code>, <code>frame</code>, <code>frameset</code>, <code>base</code>, and inline <code>svg</code> elements, <code>meta</code> refresh, <code>on*</code> event handlers, and embedded media of an unexpected type.</p>
+<p>These are allowed, because a browser won't run scripts from them:</p>
+<ul>
+  <li>Images in <code>&lt;img&gt;</code>, including SVG files</li>
+  <li>PDFs in <code>&lt;embed&gt;</code></li>
+  <li>Video and audio</li>
+</ul>
+
+<h2 id="built-in">Other protections</h2>
+<dl>
+  <dt>pandoc runs in its sandbox</dt>
+  <dd>word2html passes <code>--sandbox</code>, which restricts the files pandoc can access. This is why pandoc 3.6 is the minimum: before that, the sandbox didn't apply to embedded resources, so an image URL such as <code>/etc/passwd</code> could copy that file into the HTML.</dd>
+  <dt>No network or local file access for images</dt>
+  <dd>Linked images are dropped rather than fetched, so a document can't use them to track readers during conversion or pull in local files.</dd>
+  <dt>Filenames can't become options</dt>
+  <dd>pandoc always gets an absolute path with no shell involved, so a file named <code>--lua-filter=evil.docx</code> is just a file.</dd>
+  <dt>Wildcards aren't expanded</dt>
+  <dd>The characters <code>[</code>, <code>?</code>, and <code>*</code> in a path are treated literally, so <code>report[1].docx</code> can't accidentally convert <code>report1.docx</code>.</dd>
+  <dt>Safe terminal output</dt>
+  <dd>Control characters from URLs, filenames, and pandoc messages are escaped, so a crafted link can't send escape sequences to your terminal or forge output lines.</dd>
+  <dt>External XML is never loaded</dt>
+  <dd>Any XML part with a <code>DOCTYPE</code> is rejected, which blocks external-entity and "billion laughs" attacks.</dd>
+</dl>
+
+<h2 id="not-protected">What isn't protected</h2>
+<ul>
+  <li><strong>Misleading content.</strong> Phishing links, false claims, and link text that doesn't match the destination all pass.</li>
+  <li><strong>Sensitive visible text.</strong> Nothing looks for passwords or personal data, and tracked insertions are published.</li>
+  <li><strong>A full guarantee against harmful HTML.</strong> The checks target known risks, and they aren't a complete HTML sanitizer.</li>
+  <li><strong>Resource use up to the limits.</strong> A small hostile file can still use memory up to the <a href="limits.html#limits">configured limit</a>, and run until the time limit, before it's stopped.</li>
+  <li><strong>Bugs in pandoc itself.</strong> Keep pandoc up to date.</li>
+</ul>
+
+<h2 id="untrusted">Converting documents you don't trust</h2>
+<p>If you accept documents from other people and publish the result:</p>
+<ol>
+  <li>Use <code>--strict</code>, and treat exit code 3 as "don't publish".</li>
+  <li>Lower the limits, as in <a href="usage.html#recipe-untrusted">this recipe</a>.</li>
+  <li><strong>Run the HTML through an HTML sanitizer before publishing.</strong> <a href="https://pandoc.org/MANUAL.html#a-note-on-security">pandoc's security notes</a> recommend this too, because it doesn't sanitize its output.</li>
+  <li>Isolate the process with a container or a dedicated low-privilege user if it handles uploads on a server.</li>
+  <li>Serve the output from a separate domain, with a Content Security Policy, so any script that gets through can't reach your main site.</li>
+</ol>
+    <nav class="pager" aria-label="Next and previous pages">
+      <a href="usage.html" rel="prev">← Command line</a>
+      <a href="limits.html" rel="next">Validation &amp; limits →</a>
+    </nav>
+    <footer>word2html 0.5.0 · MIT License · <a href="https://github.com/bradmontgomery/word2html/issues">Report a problem</a></footer>
+  </main>
+</div>
+</body>
+</html>

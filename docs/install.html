@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Installation | word2html</title>
+  <meta name="description" content="Install pandoc and word2html on macOS, Linux and Windows.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<div class="layout">
+  <nav class="sidebar" aria-label="Documentation">
+    <a class="brand" href="index.html">word2html</a>
+    <span class="brand-version">Version 0.5.0</span>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="install.html" aria-current="page">Installation</a></li>
+      <li><a href="usage.html">Command line</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="limits.html">Validation &amp; limits</a></li>
+      <li><a href="python-api.html">Python API</a></li>
+      <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      <li><a href="upgrading.html">Upgrading from 0.4</a></li>
+      <li><a href="development.html">Development</a></li>
+    </ul>
+    <ul class="external">
+      <li><a href="https://github.com/bradmontgomery/word2html">GitHub</a></li>
+      <li><a href="https://pypi.org/project/word2html/">PyPI</a></li>
+    </ul>
+  </nav>
+  <main id="content">
+<h1>Installation</h1>
+<p class="lede">You need Python 3.12 or newer and pandoc 3.6 or newer.</p>
+
+<h2 id="pandoc">Install pandoc</h2>
+<p>pandoc is a separate program. <strong><code>uvx</code>, <code>uv</code>, and <code>pip</code> don't install it for you.</strong></p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Platform</th><th>Command</th></tr></thead>
+  <tbody>
+    <tr><td>macOS</td><td><code>brew install pandoc</code></td></tr>
+    <tr><td>Debian / Ubuntu</td><td><code>sudo apt install pandoc</code> (check the version below first)</td></tr>
+    <tr><td>Windows</td><td><code>winget install JohnMacFarlane.Pandoc</code></td></tr>
+    <tr><td>Anything else</td><td>See the <a href="https://pandoc.org/installing.html">pandoc installation guide</a></td></tr>
+  </tbody>
+</table></div>
+<p>Then check the version:</p>
+<pre><code>pandoc --version</code></pre>
+
+<h3 id="linux-versions">Linux package versions</h3>
+<p>Many distribution packages are too old for word2html. Older pandoc versions can copy local files into the HTML despite its sandbox, so word2html refuses to run them:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Distribution</th><th><code>apt</code> version</th><th>Works?</th></tr></thead>
+  <tbody>
+    <tr><td>Debian testing (forky)</td><td>3.11</td><td><span class="tag-ok">Yes</span></td></tr>
+    <tr><td>Debian 13 (trixie)</td><td>3.1.11.1</td><td><span class="tag-refuse">Too old</span></td></tr>
+    <tr><td>Ubuntu 25.04, 25.10</td><td>3.1.11.1</td><td><span class="tag-refuse">Too old</span></td></tr>
+    <tr><td>Ubuntu 24.04</td><td>3.1.3</td><td><span class="tag-refuse">Too old</span></td></tr>
+    <tr><td>Debian 12 (bookworm)</td><td>2.17.1.1</td><td><span class="tag-refuse">Too old</span></td></tr>
+  </tbody>
+</table></div>
+<p>If yours is too old, download an installer from the <a href="https://github.com/jgm/pandoc/releases">pandoc releases page</a>. There's a <code>.deb</code> file for Debian and Ubuntu.</p>
+
+<h2 id="word2html">Install word2html</h2>
+<dl>
+  <dt>Run it without installing</dt>
+  <dd><pre><code>uvx word2html report.docx</code></pre></dd>
+  <dt>Install it with uv</dt>
+  <dd><pre><code>uv tool install word2html</code></pre></dd>
+  <dt>Install it with pip</dt>
+  <dd><pre><code>pip install word2html</code></pre></dd>
+</dl>
+
+<h2 id="check">Check it works</h2>
+<pre><code>$ word2html --version
+word2html 0.5.0</code></pre>
+<div class="note"><p>These docs describe version 0.5.0. If <code>--version</code> shows something older, see <a href="upgrading.html">Upgrading from 0.4</a>: version 0.4 behaves quite differently and also needs libtidy.</p></div>
+
+<h2 id="platforms">Supported platforms</h2>
+<p>Every change is tested automatically on Linux and macOS, on Python 3.12, 3.13, 3.14, and 3.15. The tests run against pandoc 3.13 and the minimum supported version. Windows isn't tested, so it may work, but it isn't guaranteed.</p>
+    <nav class="pager" aria-label="Next and previous pages">
+      <a href="index.html" rel="prev">← Overview</a>
+      <a href="usage.html" rel="next">Command line →</a>
+    </nav>
+    <footer>word2html 0.5.0 · MIT License · <a href="https://github.com/bradmontgomery/word2html/issues">Report a problem</a></footer>
+  </main>
+</div>
+</body>
+</html>

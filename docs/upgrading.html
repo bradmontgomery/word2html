@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Upgrading from 0.4 | word2html</title>
+  <meta name="description" content="What changed in word2html 0.5 and what to update when upgrading from 0.4.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<div class="layout">
+  <nav class="sidebar" aria-label="Documentation">
+    <a class="brand" href="index.html">word2html</a>
+    <span class="brand-version">Version 0.5.0</span>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="install.html">Installation</a></li>
+      <li><a href="usage.html">Command line</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="limits.html">Validation &amp; limits</a></li>
+      <li><a href="python-api.html">Python API</a></li>
+      <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      <li><a href="upgrading.html" aria-current="page">Upgrading from 0.4</a></li>
+      <li><a href="development.html">Development</a></li>
+    </ul>
+    <ul class="external">
+      <li><a href="https://github.com/bradmontgomery/word2html">GitHub</a></li>
+      <li><a href="https://pypi.org/project/word2html/">PyPI</a></li>
+    </ul>
+  </nav>
+  <main id="content">
+<h1>Upgrading from 0.4</h1>
+<p class="lede">Version 0.5 replaces pypandoc and pytidylib with a direct call to pandoc, and adds validation, safety checks, and limits.</p>
+
+<h2 id="do">What you may need to do</h2>
+<ol>
+  <li><strong>Check your pandoc version.</strong> It must be <a href="install.html#pandoc">3.6 or newer</a>. libtidy is no longer needed.</li>
+  <li><strong>Decide about <code>--strict</code> in scripts.</strong> Default mode still converts with a warning, but automation should <a href="security.html#strict">usually use it</a>.</li>
+  <li><strong>Handle exit code 3 in scripts</strong> if you check for specific codes.</li>
+  <li><strong>Update Python code</strong> that calls <code>convert_to_html()</code>, as described below.</li>
+  <li><strong>Check anything that depends on the HTML's structure</strong>, such as CSS or scrapers, since the markup has changed.</li>
+</ol>
+
+<h2 id="fixed">What's fixed</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>In 0.4</th><th>In 0.5</th></tr></thead>
+  <tbody>
+    <tr><td><code>[</code>, <code>?</code>, or <code>*</code> in a path could <strong>silently convert a different file</strong>, merge files, or crash</td><td>Paths are always literal</td></tr>
+    <tr><td>Images pointed at files that were never written</td><td>Images are embedded in the HTML</td></tr>
+    <tr><td>No charset declared, so non-English text could be garbled</td><td>UTF-8 is declared</td></tr>
+    <tr><td>On macOS, a 2006 version of libtidy stripped HTML5 tags, so highlights were lost and footnote sections lost their structure</td><td>tidy isn't used</td></tr>
+    <tr><td><code>.DOCX</code> passed the extension check, then failed</td><td>Extensions aren't case-sensitive</td></tr>
+    <tr><td>Output was written in place, and through symlinks</td><td><a href="usage.html#output">Atomic writes</a> that never follow a symlink</td></tr>
+    <tr><td>No limits, so a 3 KB file could exhaust all memory</td><td><a href="limits.html">Validation and limits</a></td></tr>
+    <tr><td><code>import word2html</code> could exit your program if a dependency was missing</td><td>No Python dependencies, and importing never exits</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="output">What's different in the output</h2>
+<ul>
+  <li>HTML5 from pandoc's default template rather than tidied HTML 4, including pandoc's default CSS.</li>
+  <li>Images are embedded, so files can be larger.</li>
+  <li>The page has a title, instead of an empty one.</li>
+  <li>Smart quotes are plain UTF-8 characters rather than HTML entities.</li>
+  <li>Permissions on an existing output file are kept. New files use your normal defaults.</li>
+</ul>
+
+<h2 id="cli">Command-line changes</h2>
+<ul>
+  <li>New options: <code>--strict</code>, <code>--timeout</code>, <code>--max-memory</code>, <code>--max-file-size</code>, and <code>--version</code>.</li>
+  <li>New exit code: <code>3</code>, for refusals.</li>
+  <li>Messages now start with <code>word2html: warning:</code>, <code>word2html: refused:</code>, or <code>word2html: error:</code>. tidy's warnings are gone.</li>
+</ul>
+
+<h2 id="python">Python changes</h2>
+<p><code>convert_to_html()</code> now returns a result and no longer prints anything:</p>
+<pre><code># 0.4
+convert_to_html("report.docx")  # Printed its progress, and returned None
+
+# 0.5
+result = convert_to_html("report.docx")
+print("Wrote", result.output_path)
+for finding in result.warnings:
+    print("warning:", finding.message)</code></pre>
+<p>Error handling is mostly compatible. <code>FileNotFoundError</code> is unchanged, and <code>InvalidDocumentError</code> is a <code>ValueError</code>, so existing handlers still catch those. Other failures now raise <a href="python-api.html#exceptions">specific exceptions</a> based on <code>WordToHtmlError</code>.</p>
+<p>The <code>word2html.main</code> entry point and the <code>__version__</code> and <code>VERSION</code> attributes still exist. pypandoc and pytidylib are no longer installed, so if your own code imports them, add them to your own dependencies.</p>
+    <nav class="pager" aria-label="Next and previous pages">
+      <a href="troubleshooting.html" rel="prev">← Troubleshooting</a>
+      <a href="development.html" rel="next">Development →</a>
+    </nav>
+    <footer>word2html 0.5.0 · MIT License · <a href="https://github.com/bradmontgomery/word2html/issues">Report a problem</a></footer>
+  </main>
+</div>
+</body>
+</html>

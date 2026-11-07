@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Command line | word2html</title>
+  <meta name="description" content="word2html command-line options, exit codes, output behaviour and recipes.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<div class="layout">
+  <nav class="sidebar" aria-label="Documentation">
+    <a class="brand" href="index.html">word2html</a>
+    <span class="brand-version">Version 0.5.0</span>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="install.html">Installation</a></li>
+      <li><a href="usage.html" aria-current="page">Command line</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="limits.html">Validation &amp; limits</a></li>
+      <li><a href="python-api.html">Python API</a></li>
+      <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      <li><a href="upgrading.html">Upgrading from 0.4</a></li>
+      <li><a href="development.html">Development</a></li>
+    </ul>
+    <ul class="external">
+      <li><a href="https://github.com/bradmontgomery/word2html">GitHub</a></li>
+      <li><a href="https://pypi.org/project/word2html/">PyPI</a></li>
+    </ul>
+  </nav>
+  <main id="content">
+<h1>Command line</h1>
+<pre><code>word2html [-h] [--version] [--strict] [--timeout SECONDS]
+          [--max-memory SIZE] [--max-file-size SIZE] path</code></pre>
+
+<h2 id="options">Options</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>path</code></td><td>Required</td><td>The <code>.docx</code> file to convert. The extension isn't case-sensitive.</td></tr>
+    <tr><td><code>--strict</code></td><td>Off</td><td>Refuse documents with unsafe links or hidden text instead of warning. See <a href="security.html#strict">Security</a>.</td></tr>
+    <tr><td><code>--timeout SECONDS</code></td><td><code>120</code></td><td>Stop pandoc after this long. Decimals are allowed.</td></tr>
+    <tr><td><code>--max-memory SIZE</code></td><td><code>2G</code></td><td>Memory limit for pandoc. The minimum is <code>16M</code>.</td></tr>
+    <tr><td><code>--max-file-size SIZE</code></td><td><code>200M</code></td><td>The largest input file to accept.</td></tr>
+    <tr><td><code>--version</code></td><td></td><td>Show the version and exit.</td></tr>
+    <tr><td><code>-h</code>, <code>--help</code></td><td></td><td>Show help and exit.</td></tr>
+  </tbody>
+</table></div>
+<p><code>SIZE</code> is a whole number with an optional unit: <code>K</code>, <code>M</code>, or <code>G</code>, such as <code>512M</code> or <code>2G</code>. A number alone means bytes. Units are powers of 1024, and <code>512MB</code> and <code>512MiB</code> both mean the same as <code>512M</code>.</p>
+
+<h2 id="exit-codes">Exit codes</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Code</th><th>Meaning</th><th>Output file</th></tr></thead>
+  <tbody>
+    <tr><td><code>0</code></td><td>Converted. Any warnings were printed to stderr.</td><td>Written</td></tr>
+    <tr><td><code>1</code></td><td>Invalid input, a limit was exceeded, or pandoc or the file write failed.</td><td>Not changed</td></tr>
+    <tr><td><code>2</code></td><td>Bad command line.</td><td>Not changed</td></tr>
+    <tr><td><code>3</code></td><td>Refused for safety.</td><td>Not changed</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="output">The output file</h2>
+<ul>
+  <li><strong>Location:</strong> next to the input, with the same name and an <code>.html</code> extension. <code>docs/Report.v2.DOCX</code> becomes <code>docs/Report.v2.html</code>.</li>
+  <li><strong>Overwriting:</strong> an existing file with that name <strong>is replaced without asking</strong>, keeping its permissions.</li>
+  <li><strong>Atomic:</strong> the new file is written separately and then swapped into place. If conversion fails or is refused, an existing file stays exactly as it was.</li>
+  <li><strong>Symlinks:</strong> if the output path is a symlink, the link itself is replaced and its target isn't touched.</li>
+  <li><strong>Page title:</strong> the text of a paragraph in Word's Title style if there is one, and otherwise the filename.</li>
+</ul>
+<p>The success message goes to stdout. Warnings and errors go to stderr, so you can separate them in scripts.</p>
+
+<h2 id="conversion">What's kept and what isn't</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>In the Word document</th><th>In the HTML</th></tr></thead>
+  <tbody>
+    <tr><td>Text, headings, lists, tables, links, footnotes, highlights</td><td>Kept</td></tr>
+    <tr><td>Embedded images, PDFs, video, audio</td><td>Embedded in the HTML, so output can be larger than the <code>.docx</code></td></tr>
+    <tr><td>Linked images, stored outside the document</td><td>Dropped with a warning, and never fetched</td></tr>
+    <tr><td>Tracked insertions</td><td><strong>Published as if accepted</strong></td></tr>
+    <tr><td>Tracked deletions</td><td>Dropped</td></tr>
+    <tr><td>Comments</td><td>Dropped</td></tr>
+    <tr><td>Paragraphs in Word's Title, Author, and Date styles</td><td>Kept, and also used for the page's metadata</td></tr>
+    <tr><td>Document properties, set in File › Info</td><td>Not published</td></tr>
+    <tr><td>Hidden text</td><td><strong>Published as visible text</strong>, with a warning. See <a href="security.html#hidden-text">Security</a>.</td></tr>
+  </tbody>
+</table></div>
+<p>Styling comes from pandoc's default CSS rather than the Word document, so fonts, colours, and page layout won't match the original.</p>
+
+<h2 id="recipes">Recipes</h2>
+
+<h3 id="recipe-batch">Convert a folder of documents</h3>
+<p>Use <code>--strict</code> and track failures, so one bad document doesn't go unnoticed:</p>
+<pre><code>status=0
+for doc in ./*.docx; do
+  word2html --strict "$doc" || status=1
+done
+exit "$status"</code></pre>
+<p>The <code>./</code> matters: it stops a file named something like <code>--strict.docx</code> from being read as an option.</p>
+
+<h3 id="recipe-dash">Convert a file whose name starts with a dash</h3>
+<pre><code>word2html ./-draft.docx
+word2html -- -draft.docx</code></pre>
+
+<h3 id="recipe-exit">Act on the result in a script</h3>
+<pre><code>word2html --strict "$doc"
+case $? in
+  0) echo "converted" ;;
+  3) echo "refused: needs a human to review it" ;;
+  *) echo "failed" ;;
+esac</code></pre>
+
+<h3 id="recipe-untrusted">Convert untrusted documents on a shared machine</h3>
+<pre><code>word2html --strict --timeout 30 --max-memory 512M --max-file-size 25M upload.docx</code></pre>
+<p>Then read <a href="security.html#untrusted">Converting documents you don't trust</a>, because these checks aren't a complete sanitizer.</p>
+
+<h3 id="recipe-large">Convert a very long document</h3>
+<pre><code>word2html --max-memory 8G --timeout 600 book.docx</code></pre>
+    <nav class="pager" aria-label="Next and previous pages">
+      <a href="install.html" rel="prev">← Installation</a>
+      <a href="security.html" rel="next">Security →</a>
+    </nav>
+    <footer>word2html 0.5.0 · MIT License · <a href="https://github.com/bradmontgomery/word2html/issues">Report a problem</a></footer>
+  </main>
+</div>
+</body>
+</html>

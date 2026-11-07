@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Python API | word2html</title>
+  <meta name="description" content="Use word2html from Python: convert_to_html, ConversionResult, Limits, findings and exceptions.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<div class="layout">
+  <nav class="sidebar" aria-label="Documentation">
+    <a class="brand" href="index.html">word2html</a>
+    <span class="brand-version">Version 0.5.0</span>
+    <ul>
+      <li><a href="index.html">Overview</a></li>
+      <li><a href="install.html">Installation</a></li>
+      <li><a href="usage.html">Command line</a></li>
+      <li><a href="security.html">Security</a></li>
+      <li><a href="limits.html">Validation &amp; limits</a></li>
+      <li><a href="python-api.html" aria-current="page">Python API</a></li>
+      <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      <li><a href="upgrading.html">Upgrading from 0.4</a></li>
+      <li><a href="development.html">Development</a></li>
+    </ul>
+    <ul class="external">
+      <li><a href="https://github.com/bradmontgomery/word2html">GitHub</a></li>
+      <li><a href="https://pypi.org/project/word2html/">PyPI</a></li>
+    </ul>
+  </nav>
+  <main id="content">
+<h1>Python API</h1>
+<p class="lede">Everything the command line does is available from Python. The library never prints or exits: results are returned, and failures are raised.</p>
+
+<h2 id="example">Example</h2>
+<pre><code>from dataclasses import replace
+
+from word2html import Limits, UnsafeDocumentError, WordToHtmlError, convert_to_html
+
+limits = replace(Limits(), timeout=30, max_memory=512 * 1024 * 1024)
+
+try:
+    result = convert_to_html("report.docx", strict=True, limits=limits)
+except UnsafeDocumentError as exc:
+    print("refused:", exc)
+    for finding in exc.findings:
+        print(" -", finding.kind, finding.message)
+except (WordToHtmlError, FileNotFoundError) as exc:
+    print("failed:", exc)
+else:
+    print("wrote", result.output_path)
+    for finding in result.warnings:
+        print(" -", finding.kind, finding.message)</code></pre>
+
+<h2 id="convert">convert_to_html</h2>
+<pre><code>convert_to_html(
+    filename: str | os.PathLike[str],
+    *,
+    strict: bool = False,
+    limits: Limits | None = None,
+) -&gt; ConversionResult</code></pre>
+<p>Converts a document and writes the HTML next to it, replacing any existing file with that name.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Argument</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>filename</code></td><td>Path to the <code>.docx</code> file.</td></tr>
+    <tr><td><code>strict</code></td><td>Raise <code>UnsafeDocumentError</code> for unsafe links or hidden text, instead of returning them as warnings.</td></tr>
+    <tr><td><code>limits</code></td><td>Resource limits, or <code>None</code> for the defaults.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="result">ConversionResult</h2>
+<div class="table-wrap"><table>
+  <thead><tr><th>Attribute</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>output_path</code></td><td><code>pathlib.Path</code></td><td>The HTML file that was written.</td></tr>
+    <tr><td><code>warnings</code></td><td><code>tuple[Finding, ...]</code></td><td>Things to know about the document. Empty if there are none.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="limits">Limits</h2>
+<p>A frozen dataclass. Use <code>dataclasses.replace()</code> to change individual values.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Field</th><th>Default</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>max_file_size</code></td><td>200 MiB</td><td>Largest input file, in bytes.</td></tr>
+    <tr><td><code>max_total_uncompressed</code></td><td>1 GiB</td><td>Largest total uncompressed size, in bytes.</td></tr>
+    <tr><td><code>max_xml_part_size</code></td><td>64 MiB</td><td>Largest single XML part, in bytes.</td></tr>
+    <tr><td><code>max_zip_entries</code></td><td>10,000</td><td>Most files in the archive.</td></tr>
+    <tr><td><code>max_xml_depth</code></td><td>256</td><td>Deepest XML nesting.</td></tr>
+    <tr><td><code>max_memory</code></td><td>2 GiB</td><td>pandoc memory limit, in bytes.</td></tr>
+    <tr><td><code>timeout</code></td><td>120.0</td><td>pandoc time limit, in seconds.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="findings">Finding and FindingKind</h2>
+<p>A <code>Finding</code> has a <code>kind</code> and a <code>message</code>. Messages are already escaped, so they're safe to print to a terminal.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th><code>FindingKind</code></th><th>Value</th><th>Meaning</th><th>Handling</th></tr></thead>
+  <tbody>
+    <tr><td><code>UNSAFE_LINK</code></td><td><code>unsafe-link</code></td><td>A link with a scheme that isn't allowed</td><td>Warning; refused with <code>strict=True</code></td></tr>
+    <tr><td><code>HIDDEN_TEXT</code></td><td><code>hidden-text</code></td><td>Text hidden in Word that'll be visible</td><td>Warning; refused with <code>strict=True</code></td></tr>
+    <tr><td><code>ACTIVE_CONTENT</code></td><td><code>active-content</code></td><td>Content that could run in a browser</td><td>Always refused</td></tr>
+    <tr><td><code>LINKED_IMAGE</code></td><td><code>linked-image</code></td><td>An image that isn't stored in the document</td><td>Warning only</td></tr>
+    <tr><td><code>PANDOC</code></td><td><code>pandoc</code></td><td>A message from pandoc itself</td><td>Warning only</td></tr>
+  </tbody>
+</table></div>
+<p>Check for a specific kind like this:</p>
+<pre><code>from word2html import FindingKind, convert_to_html
+
+result = convert_to_html("report.docx")
+has_hidden_text = any(f.kind is FindingKind.HIDDEN_TEXT for f in result.warnings)</code></pre>
+
+<h2 id="exceptions">Exceptions</h2>
+<p>Everything word2html raises deliberately derives from <code>WordToHtmlError</code>, except <code>FileNotFoundError</code> for a missing input. If any of these is raised, no output was written.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Exception</th><th>Raised when</th></tr></thead>
+  <tbody>
+    <tr><td><code>WordToHtmlError</code></td><td>The base class. Catch this for any deliberate failure.</td></tr>
+    <tr><td><code>InvalidDocumentError</code></td><td>The input isn't a usable <code>.docx</code>. Also a <code>ValueError</code>.</td></tr>
+    <tr><td><code>ResourceLimitError</code></td><td>The input, or converting it, exceeded a limit.</td></tr>
+    <tr><td><code>UnsafeDocumentError</code></td><td>The document was refused. Its <code>findings</code> attribute says why.</td></tr>
+    <tr><td><code>PandocNotFoundError</code></td><td>pandoc isn't installed or isn't on <code>PATH</code>.</td></tr>
+    <tr><td><code>PandocError</code></td><td>pandoc is too old, or failed for a reason other than the document.</td></tr>
+    <tr><td><code>OutputError</code></td><td>The HTML couldn't be written.</td></tr>
+    <tr><td><code>FileNotFoundError</code></td><td>The input doesn't exist. This is Python's built-in exception.</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="version">Version</h2>
+<pre><code>import word2html
+
+print(word2html.__version__)</code></pre>
+
+<h2 id="threads">Threads and processes</h2>
+<p>Each call starts its own pandoc process and keeps no shared state, so separate documents can be converted at the same time. Two calls converting the same document will both write the same output path, and whichever finishes last wins.</p>
+    <nav class="pager" aria-label="Next and previous pages">
+      <a href="limits.html" rel="prev">← Validation &amp; limits</a>
+      <a href="troubleshooting.html" rel="next">Troubleshooting →</a>
+    </nav>
+    <footer>word2html 0.5.0 · MIT License · <a href="https://github.com/bradmontgomery/word2html/issues">Report a problem</a></footer>
+  </main>
+</div>
+</body>
+</html>
